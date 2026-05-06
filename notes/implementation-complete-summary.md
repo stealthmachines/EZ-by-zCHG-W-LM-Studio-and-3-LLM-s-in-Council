@@ -19,8 +19,8 @@ C:\wuwei-routing\run.bat
 
 # Option 3: Interactive
 .\router-phi.ps1 GET /test
-# Output: ROUTING_COMPLETE:server=local-mcp,port=3333,hash=1
-#        3333
+# Output: ROUTING_COMPLETE:server=phi-primary,port=4111,hash=1
+#        4111
 ```
 
 ## Architecture Summary
@@ -56,7 +56,7 @@ C:\wuwei-routing\run.bat
                        │
                        ▼
 ┌─────────────────────────────────────────────────────────────┐
-│   { local-mcp:3333, local-mcp-dos:3334 }                  │
+│   { phi-primary:4111, phi-mirror:4112 }                  │
 │   • Wu-Wei MCP servers                                     │
 │   • SSE endpoints at /sse                                  │
 └──────────────────────┬──────────────────────────────────────┘
@@ -126,8 +126,8 @@ Get-Content .\logs\daemon-*.log | Select-Object -Last 10
 ## Integration with LM Studio
 
 ### Current State
-- LM Studio already has `local-mcp` (3333) configured
-- Add `local-mcp-dos` (3334) to integrations
+- LM Studio already has `phi-primary` (4111) configured
+- Add `phi-mirror` (4112) to integrations
 - Both servers now available for routing
 
 ### Future Enhancement

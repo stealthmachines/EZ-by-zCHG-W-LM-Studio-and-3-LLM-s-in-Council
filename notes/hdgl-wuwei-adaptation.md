@@ -23,14 +23,14 @@ Like HDGL's `living_network.conf`, create dynamic routing:
 ```json
 {
   "servers": {
-    "local-mcp": {
-      "port": 3333,
+    "phi-primary": {
+      "port": 4111,
       "strand": 0,
       "weight": 1,
       "authority": false
     },
-    "local-mcp-dos": {
-      "port": 3334,
+    "phi-mirror": {
+      "port": 4112,
       "strand": 1,
       "weight": φ,
       "authority": true
@@ -62,7 +62,7 @@ Create a **mini-HDGL gateway** that:
    - Path/hash
    - Current system state
    - Temporal factors
-3. **Routes to appropriate Wu-Wei server** (3333 or 3334)
+3. **Routes to appropriate Wu-Wei server** (4111 or 4112)
 4. **Re-evaluates every N seconds** (like HDGL's 30s cycle)
 
 ### Example Gateway Code Structure
@@ -78,8 +78,8 @@ phi = (1 + math.sqrt(5)) / 2  # Golden ratio
 class HDGLRouting:
     def __init__(self):
         self.servers = {
-            "local-mcp": {"port": 3333, "strand": 0, "healthy": True},
-            "local-mcp-dos": {"port": 3334, "strand": 1, "healthy": True},
+            "phi-primary": {"port": 4111, "strand": 0, "healthy": True},
+            "phi-mirror": {"port": 4112, "strand": 1, "healthy": True},
         }
         self.last_cycle = time.time()
         self.cycle_interval = 30  # Like HDGL
@@ -142,7 +142,7 @@ class HDGLRouting:
 ## Next Steps
 
 1. **Create a lightweight HDGL gateway** that sits in front of your Wu-Wei servers
-2. **Implement φ-routing** to distribute requests between 3333 and 3334
+2. **Implement φ-routing** to distribute requests between 4111 and 4112
 3. **Add health checks** similar to HDGL's daemon monitoring
 4. **Log state cycles** to track routing decisions (like HDGL's daemon.log)
 

@@ -2,8 +2,8 @@
 **Generated: 2026-05-04** | **Version: 3.0.0** | **Size: ~1200 tokens**
 
 ## Core Architecture
-- **Server**: local-mcp v3.0.0 (Wu-Wei Unfold Architecture)
-- **Endpoint**: http://localhost:3333/sse
+- **Server**: phi-primary v3.0.0 (Wu-Wei Unfold Architecture)
+- **Endpoint**: http://localhost:4111/sse
 - **Tools**: 57 primitives across 14 capability groups
 - **Pass Pipeline**: FETCH→TRANSFORM→STORE→RESPOND (or other sequences based on task analysis)
 - **FlowState**: Carries cwd, env, data, last_path, last_url, browser_session, etc. across passes

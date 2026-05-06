@@ -61,12 +61,12 @@ if (HELP) {
   ${c.bold}launch.mjs${c.reset} — Easy by zCHG.org
 
   ${c.cyan}node launch.mjs${c.reset}                         start everything
-  ${c.cyan}node launch.mjs --no-proxy${c.reset}              skip coord-proxy (:1233)
+  ${c.cyan}node launch.mjs --no-proxy${c.reset}              skip coord-proxy (:1618)
   ${c.cyan}node launch.mjs --status${c.reset}                probe ports + show loaded LLMs
   ${c.cyan}node launch.mjs --load-model MODEL_ID${c.reset}   ask LM Studio to load a model
   ${c.cyan}node launch.mjs --help${c.reset}                  this message
 
-  Ports:  3333 server.js · 3334 server-dos.js · 1233 coord-proxy · 1234 LM Studio
+  Ports:  4111 server.js · 4112 server-dos.js · 1618 coord-proxy · 1234 LM Studio
 
   Prerequisites:
     • Node.js >= 18     https://nodejs.org
@@ -78,9 +78,9 @@ if (HELP) {
 
 // ── Processes ─────────────────────────────────────────────────────────────────
 const STACK = [
-  { label: 'MCP-A ', color: c.cyan,    script: 'server.js',      port: 3333, env: {} },
-  { label: 'MCP-B ', color: c.yellow,  script: 'server-dos.js',  port: 3334, env: { MCP_PORT: '3334' } },
-  { label: 'PROXY ', color: c.blue,    script: 'coord-proxy.js', port: 1233,
+  { label: 'MCP-A ', color: c.cyan,    script: 'server.js',      port: 4111, env: {} },
+  { label: 'MCP-B ', color: c.yellow,  script: 'server-dos.js',  port: 4112, env: { MCP_PORT: '4112' } },
+  { label: 'PROXY ', color: c.blue,    script: 'coord-proxy.js', port: 1618,
     env: { LLM1: 'qwen3.5-9b@q2_k_xl', LLM2: 'qwen3.5-9b@q2_k_xl:2' },
     skip: () => NO_PROXY },
 ];
@@ -99,9 +99,9 @@ function portInUse(port) {
 // ── Status display ────────────────────────────────────────────────────────────
 async function showStatus() {
   const rows = [
-    { port: 3333, label: 'server.js      (MCP primary)' },
-    { port: 3334, label: 'server-dos.js  (MCP peer)   ' },
-    { port: 1233, label: 'coord-proxy.js (phi-routing) ' },
+    { port: 4111, label: 'server.js      (MCP primary)' },
+    { port: 4112, label: 'server-dos.js  (MCP peer)   ' },
+    { port: 1618, label: 'coord-proxy.js (phi-routing) ' },
     { port: 1234, label: 'LM Studio      (LLM backend) ' },
   ];
   console.log(`\n${c.bold}── Stack status ───────────────────────────────────────${c.reset}`);
@@ -257,18 +257,18 @@ function startHealthWriter() {
 
   const write = async () => {
     const check = (port) => portInUse(port).then(up => up ? 'HEALTHY' : 'DOWN');
-    const [mcp, dos, llm] = await Promise.all([check(3333), check(3334), check(1234)]);
+    const [mcp, dos, llm] = await Promise.all([check(4111), check(4112), check(1234)]);
     const now = new Date().toISOString();
     const health = {
       timestamp:    now,
       cycle_id:     Math.floor(Date.now() / 1000),
-      local_mcp:     { port: 3333, status: mcp, last_check: now, llm_context: 200000 },
-      local_mcp_dos: { port: 3334, status: dos, last_check: now, llm_context: 199999 },
+      phi_primary:  { port: 4111, status: mcp, last_check: now, llm_context: 200000 },
+      phi_mirror:   { port: 4112, status: dos, last_check: now, llm_context: 199999 },
       llm:           { port: 1234, status: llm, last_check: now },
     };
     try {
       writeFileSync(path.join(stateDir, 'health.json'),     JSON.stringify(health, null, 2));
-      writeFileSync(path.join(stateDir, 'active_server'),   mcp === 'HEALTHY' ? 'local-mcp' : 'local-mcp-dos');
+      writeFileSync(path.join(stateDir, 'active_server'),   mcp === 'HEALTHY' ? 'phi-primary' : 'phi-mirror');
       writeFileSync(path.join(stateDir, 'last_cycle'),      now);
     } catch { /* disk write errors are non-fatal */ }
   };
@@ -397,12 +397,12 @@ for (const proc of STACK) {
 startHealthWriter();
 
 console.log(`\n${c.bold}Stack running.${c.reset}  ${c.gray}Ctrl+C to stop all.${c.reset}`);
-console.log(`${c.cyan}  Chat UI →  http://localhost:1233${c.reset}\n`);
+console.log(`${c.cyan}  Chat UI →  http://localhost:1618${c.reset}\n`);
 
 // ── Auto-open chat UI in the default browser ──────────────────────────────
 // Waits up to 4 s for coord-proxy to be ready before opening.
 (async () => {
-  const CHAT_URL = 'http://localhost:1233';
+  const CHAT_URL = 'http://localhost:1618';
   // Poll until proxy is up (max 4 s)
   for (let i = 0; i < 8; i++) {
     try {

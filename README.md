@@ -8,20 +8,20 @@
 
 | Process | Port | File | Purpose |
 |---------|------|------|---------|
-| MCP Server A | 3333 | `server.js` | Primary tools + LLM bridge |
-| MCP Server B | 3334 | `server-dos.js` | Mirror — stochastic divergence |
-| Coord-Proxy | 1233 | `coord-proxy.js` | Wu-Wei phi-routing (SOLO / RELAY / CHALLENGE) |
+| MCP Server A | 4111 | `server.js` | Primary tools + LLM bridge |
+| MCP Server B | 4112 | `server-dos.js` | Mirror — stochastic divergence |
+| Coord-Proxy | 1618 | `coord-proxy.js` | Wu-Wei phi-routing (SOLO / RELAY / CHALLENGE) |
 | Wu-Wei Daemon | — | `wuwei-routing/` | HDGL health writer |
 | LM Studio | 1234 | *(external)* | **Never touch from code** |
 
 ```
 Claude / Copilot
       │
-      ├── MCP tools (SSE) ──► server.js :3333 ──► ERL ledger
+      ├── MCP tools (SSE) ──► server.js :4111 ──► ERL ledger
       │                                        └► llm_query ──► LM Studio :1234
-      └──────────────────────► server-dos.js :3334 (mirror)
+      └──────────────────────► server-dos.js :4112 (mirror)
                                     │
-coord-proxy :1233 ─────────────────►│ phi-routes between :3333 / :3334 / :1234
+coord-proxy :1618 ─────────────────►│ phi-routes between :4111 / :4112 / :1234
 ```
 
 ---
@@ -48,7 +48,7 @@ What happens automatically:
 3. **LM Studio** downloaded and installed silently
 4. **Qwen3.5-9B GGUF** (~4 GB) downloaded and imported into LM Studio
 5. **LM Studio server** started on :1234, model loaded into memory
-6. **MCP stack** started (server.js :3333 + server-dos.js :3334 + coord-proxy :1233)
+6. **MCP stack** started (server.js :4111 + server-dos.js :4112 + coord-proxy :1618)
 
 ### Install options
 ```bash
@@ -211,8 +211,8 @@ node _twin_demo.mjs
 
 Three voices answer the same question. Responses are logged to ERL and a thematic alignment check is run.
 
-- **Voice A** — `qwen3.5-9b@q2_k_xl:2` on port 3333
-- **Voice B** — `qwen3.5-9b@q2_k_xl` on port 3334
+- **Voice A** — `qwen3.5-9b@q2_k_xl:2` on port 4111
+- **Voice B** — `qwen3.5-9b@q2_k_xl` on port 4112
 - **Voice C** — GitHub Copilot (inline — no local endpoint needed)
 
 ```powershell
@@ -242,7 +242,7 @@ Fire individual MCP tool calls for testing and inspection.
 
 ## Coord-Proxy — Wu-Wei Phi-Routing
 
-`coord-proxy.js` (port 1233) sits between your client and LM Studio, routing requests based on a phi-hash of the prompt content:
+`coord-proxy.js` (port 1618) sits between your client and LM Studio, routing requests based on a phi-hash of the prompt content:
 
 | Score | Mode | Behaviour |
 |-------|------|-----------|
@@ -258,7 +258,7 @@ Distribution converges to φ-emergent proportions: **61.8% SOLO / 23.6% RELAY / 
 
 Check status:
 ```powershell
-Invoke-RestMethod http://localhost:1233/status
+Invoke-RestMethod http://localhost:1618/status
 ```
 
 ---
@@ -298,7 +298,7 @@ The **Markov trit gate** (−1/0/+1) is genuine tri-state logic — the same rea
 
 ## Browser Chat UI
 
-Once the stack is running, open **http://localhost:1233** in any browser (the installer auto-opens it).
+Once the stack is running, open **http://localhost:1618** in any browser (the installer auto-opens it).
 
 - Static welcome card on load — the UI leads, not the LLM
 - `Enter` to send, `Shift+Enter` for newlines
@@ -306,7 +306,7 @@ Once the stack is running, open **http://localhost:1233** in any browser (the in
 - phi-routing (SOLO / RELAY / CHALLENGE) happens transparently in the proxy
 - No WebSocket — plain HTTP POST to `/v1/chat/completions`
 
-Alternate routes: `http://localhost:1233/` and `http://localhost:1233/chat` both serve the UI.
+Alternate routes: `http://localhost:1618/` and `http://localhost:1618/chat` both serve the UI.
 
 ---
 
@@ -342,10 +342,10 @@ start.bat              Windows re-launch shortcut → node launch.mjs
 start.sh               macOS/Linux re-launch shortcut → node launch.mjs
 
 # ── Stack core ───────────────────────────────────────────────────────────────
-server.js              MCP Server A — port 3333
-server-dos.js          MCP Server B — port 3334 (mirror)
-coord-proxy.js         Wu-Wei phi-routing proxy — port 1233
-chat.html              Browser chat UI served at http://localhost:1233
+server.js              MCP Server A — port 4111
+server-dos.js          MCP Server B — port 4112 (mirror)
+coord-proxy.js         Wu-Wei phi-routing proxy — port 1618
+chat.html              Browser chat UI served at http://localhost:1618
 start-server.js        Helper — starts MCP servers without the proxy
 
 # ── Tools ────────────────────────────────────────────────────────────────────
@@ -381,7 +381,7 @@ wuwei-routing/         HDGL routing configs and runtime state
 
 | Port | Process | Notes |
 |------|---------|-------|
-| 3333 | server.js | Primary MCP server |
-| 3334 | server-dos.js | Mirror MCP server |
-| 1233 | coord-proxy.js | Wu-Wei routing proxy |
+| 4111 | server.js | Primary MCP server |
+| 4112 | server-dos.js | Mirror MCP server |
+| 1618 | coord-proxy.js | Wu-Wei routing proxy |
 | 1234 | LM Studio | External — never modify |

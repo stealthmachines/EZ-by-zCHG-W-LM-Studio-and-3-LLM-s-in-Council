@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * LOCAL MCP SERVER  v3.0.0  —  Wu-Wei Unfold Architecture
+ * PHI-PRIMARY SERVER  v3.0.0  —  Wu-Wei Unfold Architecture
  * ═══════════════════════════════════════════════════════════════════════════
  *
  * Inspired by fold26_wuwei_stream.c:
@@ -46,7 +46,7 @@
  * The agent also retains direct access to all primitive tools for cases
  * where a single known operation is needed (like calling deflate directly).
  *
- * SSE endpoint: http://localhost:3333/sse
+ * SSE endpoint: http://localhost:4111/sse
  */
 
 import { Server }             from "@modelcontextprotocol/sdk/server/index.js";
@@ -66,7 +66,7 @@ import { initRail, containerizeErlEntry } from "./analog-container.mjs";
 
 const require    = createRequire(import.meta.url);
 const execAsync  = promisify(exec);
-const PORT       = parseInt(process.env.MCP_PORT   || "3333");
+const PORT       = parseInt(process.env.MCP_PORT   || "4111");
 const LOG_FILE   = process.env.MCP_LOG    || path.join(process.cwd(), "mcp-audit.log");
 const DB_FILE    = process.env.MCP_DB     || path.join(process.cwd(), "mcp-data.db");
 const NOTES_DIR  = process.env.MCP_NOTES  || path.join(process.cwd(), "notes");
@@ -1401,7 +1401,7 @@ async function callPrimitive(name, args = {}) {
 
     // ── SELF-HEAL: TCP-probe both servers, log + return restart actions ────────
     case "self_heal": {
-      const portsToCheck = args.ports || [3333, 3334];
+      const portsToCheck = args.ports || [4111, 4112];
       const results = {};
       for (const p of portsToCheck) {
         results[p] = { healthy: await tcpProbe("127.0.0.1", p, 500) };
@@ -1418,9 +1418,9 @@ async function callPrimitive(name, args = {}) {
       const actions = unhealthy.map(p => ({
         port: p,
         can_restart: p !== PORT,
-        restart_cmd: p === 3333
+        restart_cmd: p === 4111
           ? `node server.js`
-          : `set MCP_PORT=3334 && node server-dos.js`,
+          : `set MCP_PORT=4112 && node server-dos.js`,
         note: p === PORT
           ? "Cannot restart active server — switch client to peer first"
           : "Peer server safe to restart — active server unaffected",
@@ -1431,9 +1431,9 @@ async function callPrimitive(name, args = {}) {
 
     // ── SELF-IMPROVE: stage patch for peer server (hot-swap safe) ───────────
     case "self_improve": {
-      const PEER_PORT = PORT === 3333 ? 3334 : 3333;
-      const PEER_FILE = PORT === 3333 ? "server-dos.js" : "server.js";
-      const OWN_FILE  = PORT === 3333 ? "server.js" : "server-dos.js";
+      const PEER_PORT = PORT === 4111 ? 4112 : 4111;
+      const PEER_FILE = PORT === 4111 ? "server-dos.js" : "server.js";
+      const OWN_FILE  = PORT === 4111 ? "server.js" : "server-dos.js";
       const targetFile = (args.target === "self") ? OWN_FILE : PEER_FILE;
       const targetPath = path.join(process.cwd(), targetFile);
       if (targetFile === OWN_FILE && !args.allow_self_patch) {
@@ -1542,7 +1542,7 @@ async function callPrimitive(name, args = {}) {
       ) / 0xFFFFFFFF;
       const score = (raw * PHI) % 1;
       const mode  = score < 0.382 ? 'SOLO' : score < 0.618 ? 'RELAY' : 'CHALLENGE';
-      const peerPort = PORT === 3333 ? 3334 : 3333;
+      const peerPort = PORT === 4111 ? 4112 : 4111;
       return {
         phi_score: parseFloat(score.toFixed(6)),
         mode,
@@ -1734,12 +1734,12 @@ async function callPrimitive(name, args = {}) {
 
       // Collect twin_flame_eval entries from both ports
       const evalHist = erlHistory(ledger, { branch: 'twin_flame_evals', limit: 200 });
-      const byPort   = { 3333: [], 3334: [] };
+      const byPort   = { 4111: [], 4112: [] };
       for (const e of evalHist) {
         try {
           const parsed = JSON.parse(e.content);
           const p = parsed.port;
-          if (p === 3333 || p === 3334) byPort[p].push({ ...parsed, id: e.id, timestamp: e.timestamp });
+          if (p === 4111 || p === 4112) byPort[p].push({ ...parsed, id: e.id, timestamp: e.timestamp });
         } catch { /* skip malformed */ }
       }
 
@@ -1759,17 +1759,17 @@ async function callPrimitive(name, args = {}) {
       const avg = (arr) => arr.length
         ? (arr.reduce((s, e) => s + (e.confidence ?? 5), 0) / arr.length).toFixed(2)
         : null;
-      const conf3333 = avg(byPort[3333]);
-      const conf3334 = avg(byPort[3334]);
-      const confDelta = conf3333 && conf3334
-        ? Math.abs(parseFloat(conf3333) - parseFloat(conf3334)).toFixed(2)
+      const conf4111 = avg(byPort[4111]);
+      const conf4112 = avg(byPort[4112]);
+      const confDelta = conf4111 && conf4112
+        ? Math.abs(parseFloat(conf4111) - parseFloat(conf4112)).toFixed(2)
         : null;
 
       return {
-        port_3333: { eval_count: byPort[3333].length, avg_confidence: conf3333,
-                     recent: byPort[3333].slice(0, 3) },
-        port_3334: { eval_count: byPort[3334].length, avg_confidence: conf3334,
-                     recent: byPort[3334].slice(0, 3) },
+        port_4111: { eval_count: byPort[4111].length, avg_confidence: conf4111,
+                     recent: byPort[4111].slice(0, 3) },
+        port_4112: { eval_count: byPort[4112].length, avg_confidence: conf4112,
+                     recent: byPort[4112].slice(0, 3) },
         confidence_delta: confDelta,
         diverged: confDelta !== null && parseFloat(confDelta) > 2.0,
         divergence_note: confDelta !== null && parseFloat(confDelta) > 2.0
@@ -1995,13 +1995,13 @@ const TOOLS = [
   },
   { name: "self_heal",
     description: [
-      "TCP-probe both MCP servers (ports 3333 and 3334).",
+      "TCP-probe both MCP servers (ports 4111 and 4112).",
       "Logs unhealthy ports to ERL session_context branch.",
       "Returns per-port health status and safe restart commands.",
       "Hot-swap safe: only suggests restarting the peer server, never the active one.",
     ].join(" "),
     inputSchema: { type:"object", properties:{
-      ports: { type:"array", items:{type:"number"}, description:"Ports to probe (default [3333,3334])" },
+      ports: { type:"array", items:{type:"number"}, description:"Ports to probe (default [4111,4112])" },
     }},
   },
   { name: "self_improve",
@@ -2109,7 +2109,7 @@ const TOOLS = [
   },
   { name: "twin_flame_divergence",
     description: [
-      "Compare twin-flame eval logs from both ports (3333 vs 3334) to detect knowledge asymmetry.",
+      "Compare twin-flame eval logs from both ports (4111 vs 4112) to detect knowledge asymmetry.",
       "Aggregates confidence scores from twin_flame_evals branch, computes per-port averages,",
       "flags confidence delta >2 as divergence.",
       "Optional query string searches all ERL entries and returns matching context.",
@@ -2614,7 +2614,7 @@ function buildContextMarkdown(ctx) {
 // ═════════════════════════════════════════════════════════════════════════════
 function createMcpServer() {
   const server = new Server(
-    { name: "local-mcp", version: "3.0.0" },
+    { name: "phi-primary", version: "3.0.0" },
     { capabilities: { tools: {} } }
   );
 
@@ -2654,7 +2654,7 @@ const httpServer = http.createServer(async (req, res) => {
 
   if ((url.pathname==="/"||url.pathname==="/health") && req.method==="GET") {
     res.writeHead(200,{"Content-Type":"application/json"});
-    res.end(JSON.stringify({ name:"local-mcp", version:"3.0.0", status:"ok",
+    res.end(JSON.stringify({ name:"phi-primary", version:"3.0.0", status:"ok",
       uptime_s: Math.round(process.uptime()), sessions: sessions.size,
       tools: TOOLS.length, primary_tool: "unfold",
       architecture: "Wu-Wei pass pipeline — tasks unfold as FETCH→TRANSFORM→STORE→RESPOND sequences",
@@ -2704,7 +2704,7 @@ initRail('easy-zchg/mcp-a');
 httpServer.listen(PORT, "127.0.0.1", () => {
   console.log(`
 ┌────────────────────────────────────────────────────────┐
-│          LOCAL MCP SERVER  v3.0.0  Wu-Wei              │
+│         PHI-PRIMARY SERVER  v3.0.0  Wu-Wei              │
 │          無為 · Tools unfold, not accumulate           │
 ├────────────────────────────────────────────────────────┤
 │  SSE    →  http://localhost:${PORT}/sse                   │
@@ -2812,8 +2812,8 @@ function erlPhiRecall(ledger, { branch = 'session_context', budget = 8, phi_thre
   if (!history.length) return [];
 
   const hdglActive = hdgl_state?.active_server;
-  const isActiveServer = hdglActive === 'local_mcp'     ? PORT === 3333
-                       : hdglActive === 'local_mcp_dos' ? PORT === 3334
+  const isActiveServer = hdglActive === 'phi_primary'     ? PORT === 4111
+                       : hdglActive === 'phi_mirror' ? PORT === 4112
                        : true; // no HDGL state -- treat self as active
 
   // γ-octave decay (Spiral8 echo-back pattern): score decays by γ^k per age octave
@@ -2880,7 +2880,7 @@ async function erlStandardInit({ recall_budget = 4, phi_threshold = 0.382 } = {}
       branch: 'session_context',
       role:   'context',
       content: JSON.stringify({
-        server:       `local-mcp v3.0.0 port ${PORT}`,
+        server:       `phi-primary v3.0.0 port ${PORT}`,
         endpoint:     `http://localhost:${PORT}/sse`,
         architecture: 'Wu-Wei Unfold + ERL v3 + HDGL phi-routing',
         ledger:       LEDGER_FILE,
@@ -2897,12 +2897,12 @@ async function erlStandardInit({ recall_budget = 4, phi_threshold = 0.382 } = {}
       branch: 'session_context',
       role:   'plan',
       content: [
-        `You are the local-mcp agent on port ${PORT}.`,
+        `You are the phi-primary agent on port ${PORT}.`,
         '',
         'ARCHITECTURE: Wu-Wei Unfold pipeline (FETCH→TRANSFORM→STORE→RESPOND) +',
         'ERL v3 hash-chained ledger + HDGL phi-routing (φ=1.618). A coord-proxy on',
-        'port 1233 routes between this server (local_mcp, 3333) and the peer',
-        '(local_mcp_dos, 3334) using phi-hash mode selection.',
+        'port 1618 routes between this server (phi_primary, 4111) and the peer',
+        '(phi_mirror, 4112) using phi-hash mode selection.',
         '',
         'TOOL GROUPS:',
         '  erl_*          — ledger ops: append, history, search, verify, merge, branch',

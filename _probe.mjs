@@ -76,12 +76,12 @@ function sseCall(port, toolName, toolArgs) {
 const prompt = 'Can you compare your context to your peer server?';
 console.log(`\nPrompt: "${prompt}"\n`);
 
-const [r3333, r3334] = await Promise.all([
-  sseCall(3333, 'phi_route', { prompt }),
-  sseCall(3334, 'phi_route', { prompt }),
+const [r4111, r4112] = await Promise.all([
+  sseCall(4111, 'phi_route', { prompt }),
+  sseCall(4112, 'phi_route', { prompt }),
 ]);
 
-for (const r of [r3333, r3334]) {
+for (const r of [r4111, r4112]) {
   try {
     const parsed = JSON.parse(r.body);
     const content = parsed?.result?.content?.[0]?.text;
@@ -94,12 +94,12 @@ for (const r of [r3333, r3334]) {
 
 // ── Test 2: twin_flame_eval on both ports ────────────────────────────────────
 console.log('\n── twin_flame_eval logging ─────────────────────────────────────');
-const [e3333, e3334] = await Promise.all([
-  sseCall(3333, 'twin_flame_eval', { confidence: 8, response_summary: 'Probe from _probe.mjs', would_do_differently: 'n/a', model: 'copilot' }),
-  sseCall(3334, 'twin_flame_eval', { confidence: 8, response_summary: 'Probe from _probe.mjs', would_do_differently: 'n/a', model: 'copilot' }),
+const [e4111, e4112] = await Promise.all([
+  sseCall(4111, 'twin_flame_eval', { confidence: 8, response_summary: 'Probe from _probe.mjs', would_do_differently: 'n/a', model: 'copilot' }),
+  sseCall(4112, 'twin_flame_eval', { confidence: 8, response_summary: 'Probe from _probe.mjs', would_do_differently: 'n/a', model: 'copilot' }),
 ]);
 
-for (const r of [e3333, e3334]) {
+for (const r of [e4111, e4112]) {
   try {
     const parsed = JSON.parse(r.body);
     const content = parsed?.result?.content?.[0]?.text;
@@ -112,7 +112,7 @@ for (const r of [e3333, e3334]) {
 
 // ── Test 3: twin_flame_divergence (reads eval logs from both ports) ───────────
 console.log('\n── twin_flame_divergence ───────────────────────────────────────');
-const div = await sseCall(3333, 'twin_flame_divergence', {});
+const div = await sseCall(4111, 'twin_flame_divergence', {});
 try {
   const parsed = JSON.parse(div.body);
   const content = parsed?.result?.content?.[0]?.text;
@@ -127,12 +127,12 @@ console.log('\n── llm_query twin-flame demo ──────────�
 const llmPrompt = 'In one sentence, what is the golden ratio?';
 // model field omitted → LM Studio uses whatever is currently loaded
 // To target a specific model: { prompt: llmPrompt, model: 'qwen3-4b', max_tokens: 80 }
-const [lq3333, lq3334] = await Promise.allSettled([
-  sseCall(3333, 'llm_query', { prompt: llmPrompt, max_tokens: 80, log: true }),
-  sseCall(3334, 'llm_query', { prompt: llmPrompt, max_tokens: 80, log: true }),
+const [lq4111, lq4112] = await Promise.allSettled([
+  sseCall(4111, 'llm_query', { prompt: llmPrompt, max_tokens: 80, log: true }),
+  sseCall(4112, 'llm_query', { prompt: llmPrompt, max_tokens: 80, log: true }),
 ]);
 
-for (const [port, res] of [[3333, lq3333], [3334, lq3334]]) {
+for (const [port, res] of [[4111, lq4111], [4112, lq4112]]) {
   if (res.status === 'rejected') {
     console.log(`Port ${port} → llm_query error:`, res.reason?.message);
     continue;
@@ -154,7 +154,7 @@ for (const [port, res] of [[3333, lq3333], [3334, lq3334]]) {
 
 // If both llm_query calls succeeded, run divergence to see if answers differed
 console.log('\n── divergence after llm_query ──────────────────────────────────');
-const div2 = await sseCall(3333, 'twin_flame_divergence', { query: 'llm_query' });
+const div2 = await sseCall(4111, 'twin_flame_divergence', { query: 'llm_query' });
 try {
   const parsed  = JSON.parse(div2.body);
   const content = parsed?.result?.content?.[0]?.text;

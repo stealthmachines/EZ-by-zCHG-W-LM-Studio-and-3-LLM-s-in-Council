@@ -3,7 +3,7 @@
 ## Architecture Overview
 
 ```
-Client Request → [φ-Routing Script] → { local-mcp:3333, local-mcp-dos:3334 } → LLM:1234
+Client Request → [φ-Routing Script] → { phi-primary:4111, phi-mirror:4112 } → LLM:1234
 ```
 
 ## Components
@@ -36,8 +36,8 @@ File: `routing-daemon.sh`
 
 STATE_DIR="/opt/wuwei-routing/state"
 LOG_DIR="/opt/wuwei-routing/logs"
-PORT_MCP="3333"
-PORT_MCP_DOS="3334"
+PORT_MCP="4111"
+PORT_MCP_DOS="4112"
 LLM_PORT="1234"
 CYCLE_INTERVAL=30
 PID_FILE="/opt/wuwei-routing/routing-daemon.pid"
@@ -68,15 +68,15 @@ run_cycle() {
     local mcp_status=$(check_server_health $PORT_MCP)
     local mcp_dos_status=$(check_server_health $PORT_MCP_DOS)
     
-    echo "  local-mcp (3333): $mcp_status" >> "$log_file"
-    echo "  local-mcp-dos (3334): $mcp_dos_status" >> "$log_file"
+    echo "  phi-primary (4111): $mcp_status" >> "$log_file"
+    echo "  phi-mirror (4112): $mcp_dos_status" >> "$log_file"
     
     # Update state
     cat > "$STATE_DIR/health.json" <<EOF
 {
   "timestamp": "$timestamp",
-  "local-mcp": {"port": $PORT_MCP, "status": "$mcp_status", "last_check": "${echo $timestamp | cut -d: -f1-2}"}",
-  "local-mcp-dos": {"port": $PORT_MCP_DOS, "status": "$mcp_dos_status", "last_check": "${echo $timestamp | cut -d: -f1-2}"}",
+  "phi-primary": {"port": $PORT_MCP, "status": "$mcp_status", "last_check": "${echo $timestamp | cut -d: -f1-2}"}",
+  "phi-mirror": {"port": $PORT_MCP_DOS, "status": "$mcp_dos_status", "last_check": "${echo $timestamp | cut -d: -f1-2}"}",
   "llm-port": $LLM_PORT
 }
 EOF
@@ -84,21 +84,21 @@ EOF
     # Log routing decision based on phi-simulated state
     # (Using time-based hash for analog divergence)
     local cycle_hash=$(echo $RANDOM$$(date +%s%N) | sha256sum | head -c 2)
-    local active_server="local-mcp"
+    local active_server="phi-primary"
     
     if [[ "$mcp_status" == "UNHEALTHY" && "$mcp_dos_status" == "HEALTHY" ]]; then
-        active_server="local-mcp-dos"
-        echo "[$timestamp] FAILOVER: Switched to local-mcp-dos (local-mcp unhealthy)" >> "$log_file"
+        active_server="phi-mirror"
+        echo "[$timestamp] FAILOVER: Switched to phi-mirror (phi-primary unhealthy)" >> "$log_file"
     elif [[ "$mcp_status" == "HEALTHY" && "$mcp_dos_status" == "UNHEALTHY" ]]; then
-        active_server="local-mcp"
-        echo "[$timestamp] FAILOVER: Switched to local-mcp (local-mcp-dos unhealthy)" >> "$log_file"
+        active_server="phi-primary"
+        echo "[$timestamp] FAILOVER: Switched to phi-primary (phi-mirror unhealthy)" >> "$log_file"
     else
         # Both healthy - use phi-simulated selection
         # In production, this would use actual phi computation
         local current_epoch=$(date +%s)
         local decision=$((current_epoch % 2))
         if [[ $decision -eq 1 ]]; then
-            active_server="local-mcp-dos"
+            active_server="phi-mirror"
         fi
         echo "[$timestamp] ROUTING: Active server = $active_server (phi-cycle hash: $cycle_hash)" >> "$log_file"
     fi
@@ -132,8 +132,8 @@ File: `router-phi.sh`
 # Routes individual requests based on golden ratio hashing
 
 STATE_DIR="/opt/wuwei-routing/state"
-PORT_MCP="3333"
-PORT_MCP_DOS="3334"
+PORT_MCP="4111"
+PORT_MCP_DOS="4112"
 
 # Golden ratio
 PHI=$(echo "scale=10; (1 + sqrt(5)) / 2" | bc)
@@ -156,15 +156,15 @@ get_active_server() {
     if [[ -f "$STATE_DIR/active_server" ]]; then
         cat "$STATE_DIR/active_server"
     else
-        # Default to local-mcp
-        echo "local-mcp"
+        # Default to phi-primary
+        echo "phi-primary"
     fi
 }
 
 # Get port based on server
 get_server_port() {
     local server=$1
-    if [[ "$server" == "local-mcp" ]]; then
+    if [[ "$server" == "phi-primary" ]]; then
         echo "$PORT_MCP"
     else
         echo "$PORT_MCP_DOS"
@@ -267,13 +267,13 @@ tail -20 /opt/wuwei-routing/logs/daemon-$(date +%Y%m%d).log
 ```bash
 # Test routing for different requests
 /opt/wuwei-routing/router-phi.sh GET /mcp/tools/list
-# Output: ROUTED_TO:local-mcp:3333:hash=...
+# Output: ROUTED_TO:phi-primary:4111:hash=...
 
 /opt/wuwei-routing/router-phi.sh POST /mcp/tools/execute
-# Output: ROUTED_TO:local-mcp-dos:3334:hash=...
+# Output: ROUTED_TO:phi-mirror:4112:hash=...
 
 /opt/wuwei-routing/router-phi.sh GET /llm/completion
-# Output: ROUTED_TO:local-mcp:3333:hash=...
+# Output: ROUTED_TO:phi-primary:4111:hash=...
 ```
 
 ### Integration with LM Studio

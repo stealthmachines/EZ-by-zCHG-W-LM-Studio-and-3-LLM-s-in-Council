@@ -33,25 +33,25 @@ cd "C:\Users\Owner\Downloads\MCP-Jailbreak-0.3 (1)\state0\wuwei-routing"
 
 ### Before (Single Server)
 ```
-Client → LLM:1234 → [Only local-mcp at 3333]
+Client → LLM:1234 → [Only phi-primary at 4111]
 ```
 
 ### After (Hybrid Routing)
 ```
 Client → [router-phi.ps1] → [daemon monitors both servers]
                                         ↓
-                              { local-mcp:3333, local-mcp-dos:3334 }
+                              { phi-primary:4111, phi-mirror:4112 }
                                         ↓
                                       LLM:1234
 ```
 
 ## ✨ Key Benefits
 
-1. **Load Balancing**: Requests distributed between 3333 and 3334
+1. **Load Balancing**: Requests distributed between 4111 and 4112
 2. **Self-Healing**: Auto-failover if a server crashes
 3. **Intelligent Routing**: 
    - LLM requests → primary context
-   - DOS/batch requests → local-mcp-dos
+   - DOS/batch requests → phi-mirror
    - Other requests → phi-hashed distribution
 4. **No Downtime**: Seamless integration with existing setup
 5. **Lightweight**: ~10MB, <5ms overhead
@@ -59,8 +59,8 @@ Client → [router-phi.ps1] → [daemon monitors both servers]
 ## 📊 Current Setup
 
 Your LM Studio should have:
-- ✅ `local-mcp` at port 3333 (already configured)
-- ⏳ `local-mcp-dos` at port 3334 (add to integrations)
+- ✅ `phi-primary` at port 4111 (already configured)
+- ⏳ `phi-mirror` at port 4112 (add to integrations)
 
 ## 🧪 Testing
 
@@ -71,12 +71,12 @@ cd "C:\Users\Owner\Downloads\MCP-Jailbreak-0.3 (1)\state0\wuwei-routing"
 
 # 2. Test routing
 .\router-phi.ps1 GET /mcp/tools/list
-# Output: ROUTING_COMPLETE:server=local-mcp,port=3333,hash=1
-#        3333
+# Output: ROUTING_COMPLETE:server=phi-primary,port=4111,hash=1
+#        4111
 
 # 3. Check status
 Get-Content .\state\active_server
-# Output: local-mcp or local-mcp-dos
+# Output: phi-primary or phi-mirror
 
 # 4. View logs
 Get-Content .\logs\daemon-$(Get-Date -Format 'yyyyMMdd').log | Select-Object -Last 10

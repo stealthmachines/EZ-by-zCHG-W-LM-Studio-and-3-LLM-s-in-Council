@@ -488,8 +488,8 @@ head('Step 2b/6 — Configure LM Studio');
   const mcpFile = path.join(LMS_DATA, 'mcp.json');
   const wantedMcp = {
     mcpServers: {
-      'easy-zchg-primary': { url: 'http://localhost:3333/sse' },
-      'easy-zchg-mirror':  { url: 'http://localhost:3334/sse' },
+        'easy-zchg-primary': { url: 'http://localhost:4111/sse' },
+        'easy-zchg-mirror':  { url: 'http://localhost:4112/sse' },
     },
   };
   let mcpChanged = false;
@@ -517,7 +517,7 @@ head('Step 2b/6 — Configure LM Studio');
     mcpChanged = true;
   }
   mcpChanged
-    ? ok('LM Studio MCP servers registered (easy-zchg-primary :3333, easy-zchg-mirror :3334)')
+    ok('LM Studio MCP servers registered (easy-zchg-primary :4111, easy-zchg-mirror :4112)');
     : ok('LM Studio MCP servers already configured');
 
   // ── 2. Server auto-start + CORS ────────────────────────────────────────────

@@ -3,19 +3,19 @@
 
 import('./server.js').then(module => {
   console.log('[START] Server module loaded successfully');
-  
+
   // Start the server once the module is loaded
   if (module.createServer) {
     const server = module.createServer({});
-    const transport = new SSEServerTransport('http://localhost:3333/sse', '/sse');
-    
+    const transport = new SSEServerTransport('http://localhost:4111/sse', '/sse');
+
     server.use('/sse', (req, res) => {
       transport.reqHandler(req, res);
     });
-    
+
     server.on('error', err => console.error('[SERVER ERROR]', err));
-    
-    const port = parseInt(process.env.MCP_PORT || '3333');
+
+    const port = parseInt(process.env.MCP_PORT || '4111');
     server.listen(port, '127.0.0.1', () => {
       console.log(`[SUCCESS] Server running on http://localhost:${port}/sse`);
     });

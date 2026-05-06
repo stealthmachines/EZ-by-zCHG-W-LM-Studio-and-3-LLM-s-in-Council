@@ -93,8 +93,8 @@ const QUESTION = arg('--question', 'If you had to choose one principle that shou
 const COPILOT_ANSWER = `The single governing principle should be legibility: every AI system must be able to explain, in terms a domain expert can audit, why it produced any given output. Without legibility, alignment claims are unfalsifiable — you cannot verify that a system is safe if you cannot trace its reasoning. All other desirable properties (fairness, robustness, corrigibility) depend on legibility as a prerequisite, because you cannot correct what you cannot inspect.`;
 
 // ── Models ───────────────────────────────────────────────────────────────────
-const MODEL_A    = arg('--modelA', 'qwen3.5-9b@q2_k_xl:2');  // port 3333, instance 2
-const MODEL_B    = arg('--modelB', 'qwen3.5-9b@q2_k_xl');    // port 3334, instance 1
+const MODEL_A    = arg('--modelA', 'qwen3.5-9b@q2_k_xl:2');  // port 4111, instance 2
+const MODEL_B    = arg('--modelB', 'qwen3.5-9b@q2_k_xl');    // port 4112, instance 1
 const NO_COPILOT = argv.includes('--no-copilot');
 const TEMP       = parseFloat(arg('--temp', '0.7'));
 const MAX_TOK    = parseInt(arg('--max-tokens', '200'));
@@ -104,15 +104,15 @@ console.log(' Triad Conversation Demo');
 console.log('═══════════════════════════════════════════════════════════');
 console.log(`Question: "${QUESTION}"\n`);
 console.log(`Voices:`);
-console.log(`  A — ${MODEL_A}    (port 3333, temp ${TEMP})`);
-console.log(`  B — ${MODEL_B}      (port 3334, temp ${TEMP})`);
+console.log(`  A — ${MODEL_A}    (port 4111, temp ${TEMP})`);
+console.log(`  B — ${MODEL_B}      (port 4112, temp ${TEMP})`);
 console.log(`  C — ${NO_COPILOT ? '(disabled via --no-copilot)' : 'GitHub Copilot (inline)'}\n`);
 console.log('Querying A and B in parallel (90s timeout each)...\n');
 
 // ── Query A and B in parallel, log C inline ───────────────────────────────────
 const [ra, rb] = await Promise.allSettled([
-  sseCall(3333, 'llm_query', { prompt: QUESTION, model: MODEL_A, max_tokens: MAX_TOK, temperature: TEMP, log: true, branch: 'triad_session' }),
-  sseCall(3334, 'llm_query', { prompt: QUESTION, model: MODEL_B, max_tokens: MAX_TOK, temperature: TEMP, log: true, branch: 'triad_session' }),
+  sseCall(4111, 'llm_query', { prompt: QUESTION, model: MODEL_A, max_tokens: MAX_TOK, temperature: TEMP, log: true, branch: 'triad_session' }),
+  sseCall(4112, 'llm_query', { prompt: QUESTION, model: MODEL_B, max_tokens: MAX_TOK, temperature: TEMP, log: true, branch: 'triad_session' }),
 ]);
 
 const responses = {};
@@ -136,12 +136,12 @@ for (const [label, model, settled] of [
   responses[label] = result.response;
 }
 
-// ── Voice C: Copilot (log to ERL via erlAppend on port 3333) ─────────────────
+// ── Voice C: Copilot (log to ERL via erlAppend on port 4111) ─────────────────
 if (!NO_COPILOT) {
   console.log(`─── Voice C: GitHub Copilot (inline) ${'─'.repeat(41)}`);
   console.log(`  ${COPILOT_ANSWER.replace(/\n/g, '\n  ')}`);
   const promptHash = crypto.createHash('sha256').update(QUESTION).digest('hex').slice(0, 16);
-  const copilotLog = await sseCall(3333, 'erl_append', {
+  const copilotLog = await sseCall(4111, 'erl_append', {
     content: JSON.stringify({
       tool:           'llm_query',
       model:          'github-copilot',
@@ -200,7 +200,7 @@ for (const [theme, re] of Object.entries(themes)) {
 if (scores.A || scores.B) {
   console.log('\n─── Logging twin_flame_evals (A + B) ────────────────────────');
   const evals = await Promise.allSettled([
-    scores.A ? sseCall(3333, 'twin_flame_eval', {
+    scores.A ? sseCall(4111, 'twin_flame_eval', {
       confidence:        scores.A,
       response_summary:  `triad: governance question (${wordCount(responses.A)} words)`,
       model:             MODEL_A,
@@ -208,7 +208,7 @@ if (scores.A || scores.B) {
       branch:            'triad_session',
       tags:              ['triad'],
     }) : Promise.resolve(null),
-    scores.B ? sseCall(3334, 'twin_flame_eval', {
+    scores.B ? sseCall(4112, 'twin_flame_eval', {
       confidence:        scores.B,
       response_summary:  `triad: governance question (${wordCount(responses.B)} words)`,
       model:             MODEL_B,
@@ -217,7 +217,7 @@ if (scores.A || scores.B) {
       tags:              ['triad'],
     }) : Promise.resolve(null),
   ]);
-  for (const [port, ev] of [[3333, evals[0]], [3334, evals[1]]]) {
+  for (const [port, ev] of [[4111, evals[0]], [4112, evals[1]]]) {
     if (ev.status === 'fulfilled' && ev.value) {
       const r = parseResult(ev.value);
       const eid = (r.entry_id ?? r.id ?? '?').replace(/\.\.\.$/, '').slice(0, 16);

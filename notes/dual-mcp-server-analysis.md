@@ -1,8 +1,8 @@
-# Analysis: Dual MCP Server Integration (local-mcp + local-mcp-dos)
+# Analysis: Dual MCP Server Integration (phi-primary + phi-mirror)
 
 ## Current Configuration
-- **local-mcp**: Port 3333 → server.js
-- **local-mcp-dos**: Port 3334 → server-dos.js
+- **phi-primary**: Port 4111 → server.js
+- **phi-mirror**: Port 4112 → server-dos.js
 - **Architecture**: Both implement the Wu-Wei Unfold Architecture
 
 ## Key Findings from Analysis
@@ -34,8 +34,8 @@ The system shows **redundancy** - both servers offer the same capabilities, whic
 #### C. **Geographic/Context Splitting**
 - **Idea**: Route based on task type or context
 - **Example**: 
-  - local-mcp: Complex multi-step tasks, database operations
-  - local-mcp-dos: Simple shell commands, file operations
+  - phi-primary: Complex multi-step tasks, database operations
+  - phi-mirror: Simple shell commands, file operations
 - **Benefit**: Optimized resource usage
 
 #### D. **State Isolation**
@@ -50,13 +50,13 @@ The system shows **redundancy** - both servers offer the same capabilities, whic
 1. **Add State Separation**
    ```json
    // Configure different working directories for each server
-   "local-mcp": {
-     "url": "http://localhost:3333/sse",
+   "phi-primary": {
+     "url": "http://localhost:4111/sse",
      "cwd": "C:/server1-state",
      "env": {"MCP_DB": "state0/mcp-data.db", "MCP_NOTES": "state0/notes"}
    },
-   "local-mcp-dos": {
-     "url": "http://localhost:3334/sse",
+   "phi-mirror": {
+     "url": "http://localhost:4112/sse",
      "cwd": "C:/server2-state",
      "env": {"MCP_DB": "state1/mcp-data.db", "MCP_NOTES": "state1/notes"}
    }
@@ -65,8 +65,8 @@ The system shows **redundancy** - both servers offer the same capabilities, whic
 2. **Implement Routing Logic**
    - Add a simple middleware or LM Studio prompt that directs specific task types to appropriate servers
    - Example routing rules:
-     - Tasks mentioning "dos", "batch", "multi-thread" → local-mcp-dos
-     - All other tasks → local-mcp (default)
+     - Tasks mentioning "dos", "batch", "multi-thread" → phi-mirror
+     - All other tasks → phi-primary (default)
 
 3. **Enable Cross-Server Communication**
    - Allow servers to share state via memory or shared database
@@ -80,10 +80,10 @@ The system shows **redundancy** - both servers offer the same capabilities, whic
 
 5. **Hybrid Pass Execution**
    - Split complex pipelines across servers
-   - Example: local-mcp does FETCH → TRANSFORM, local-mcp-dos does STORE → RESPOND
+   - Example: phi-primary does FETCH → TRANSFORM, phi-mirror does STORE → RESPOND
 
 6. **Specialized Tool Sets**
-   - Modify one server to expose specialized tools (e.g., local-mcp-dos for file system, local-mcp for database)
+   - Modify one server to expose specialized tools (e.g., phi-mirror for file system, phi-primary for database)
    - Add server-specific extensions without breaking the core architecture
 
 ## Conclusion

@@ -2,8 +2,8 @@
  * Twin-flame LLM demo — dual-instance divergence comparison
  *
  * Strategy:
- *   Port 3333 → qwen3.5-9b@q2_k_xl:2  (instance 2)
- *   Port 3334 → qwen3.5-9b@q2_k_xl    (instance 1, fresh after reboot)
+ *   Port 4111 → qwen3.5-9b@q2_k_xl:2  (instance 2)
+ *   Port 4112 → qwen3.5-9b@q2_k_xl    (instance 1, fresh after reboot)
  *   Same architecture, same weights, independent sampling — stochastic divergence
  *   Log both responses to ERL, run twin_flame_divergence
  */
@@ -106,21 +106,21 @@ if (hot.length >= 2) {
 }
 
 console.log(`Mode: ${modeNote}`);
-console.log(`Port 3333 → ${modelA} (temp ${tempA})`);
-console.log(`Port 3334 → ${modelB} (temp ${tempB})`);
+console.log(`Port 4111 → ${modelA} (temp ${tempA})`);
+console.log(`Port 4112 → ${modelB} (temp ${tempB})`);
 console.log('Querying both in parallel (45s timeout each)...\n');
 
 const [ra, rb] = await Promise.allSettled([
-  sseCall(3333, 'llm_query', { prompt: QUESTION, model: modelA, max_tokens: 200, temperature: tempA, log: true }),
-  sseCall(3334, 'llm_query', { prompt: QUESTION, model: modelB, max_tokens: 200, temperature: tempB, log: true }),
+  sseCall(4111, 'llm_query', { prompt: QUESTION, model: modelA, max_tokens: 200, temperature: tempA, log: true }),
+  sseCall(4112, 'llm_query', { prompt: QUESTION, model: modelB, max_tokens: 200, temperature: tempB, log: true }),
 ]);
 
 let confA = null, confB = null;
 let wordCount_a_val = 0;
 
 for (const [label, model, temp, settled] of [
-  ['3333', modelA, tempA, ra],
-  ['3334', modelB, tempB, rb],
+  ['4111', modelA, tempA, ra],
+  ['4112', modelB, tempB, rb],
 ]) {
   console.log(`─── Port ${label} (${model}, temp ${temp}) ${'─'.repeat(Math.max(0,44-model.length))}`);
   if (settled.status === 'rejected') {
@@ -137,7 +137,7 @@ for (const [label, model, temp, settled] of [
 
   const wordCount = result.response?.split(/\s+/).length ?? 0;
   const conf = Math.min(10, Math.max(4, Math.round(wordCount / 8)));
-  if (label === '3333') { confA = conf; wordCount_a_val = wordCount; }
+  if (label === '4111') { confA = conf; wordCount_a_val = wordCount; }
   else confB = conf;
 }
 
@@ -145,20 +145,20 @@ for (const [label, model, temp, settled] of [
 if (confA !== null || confB !== null) {
   console.log('─── Logging twin_flame_evals ────────────────────────────────');
   const evals = await Promise.allSettled([
-    confA !== null ? sseCall(3333, 'twin_flame_eval', {
+    confA !== null ? sseCall(4111, 'twin_flame_eval', {
       confidence: confA,
       response_summary: `llm_query answer to governance question (${wordCount_a_val} words)`,
       model: modelA,
       prompt: QUESTION,
     }) : Promise.resolve(null),
-    confB !== null ? sseCall(3334, 'twin_flame_eval', {
+    confB !== null ? sseCall(4112, 'twin_flame_eval', {
       confidence: confB,
       response_summary: `llm_query answer to governance question`,
       model: modelB,
       prompt: QUESTION,
     }) : Promise.resolve(null),
   ]);
-  for (const [port, ev] of [[3333, evals[0]], [3334, evals[1]]]) {
+  for (const [port, ev] of [[4111, evals[0]], [4112, evals[1]]]) {
     if (ev.status === 'fulfilled' && ev.value) {
       const r = parseResult(ev.value);
       console.log(`  Port ${port}: eval logged, entry_id=${r.entry_id ?? r.id ?? '?'}, confidence=${r.confidence ?? '?'}`);
@@ -169,7 +169,7 @@ if (confA !== null || confB !== null) {
 
 // ── Divergence check ──────────────────────────────────────────────────────────
 console.log('─── twin_flame_divergence ───────────────────────────────────');
-const div = await sseCall(3333, 'twin_flame_divergence', { query: 'llm_query' });
+const div = await sseCall(4111, 'twin_flame_divergence', { query: 'llm_query' });
 const dr  = parseResult(div);
 
 console.log(`  diverged:         ${dr.diverged}`);

@@ -3,7 +3,7 @@
  * COORD PROXY v1.0 — Wu-Wei + HDGL Coordination Layer
  * ═══════════════════════════════════════════════════════════════════════════
  *
- * Sits at port 1233 between clients and LM Studio (port 1234).
+ * Sits at port 1618 between clients and LM Studio (port 1234).
  * Routes every chat/completions request through phi-emergent coordination:
  *
  *   phi < 0.618  →  SOLO      (61.8% of requests) — one LLM, phi selects which
@@ -14,8 +14,8 @@
  * Same request geometry → same mode. Different content → naturally distributed.
  *
  * LLM pairing:
- *   LLM1 (qwen3.5-9b@q2_k_xl)    ↔  MCP tools on port 3333  (ctx: 200,000)
- *   LLM2 (qwen3.5-9b@q2_k_xl:2)  ↔  MCP tools on port 3334  (ctx: 199,999)
+ *   LLM1 (qwen3.5-9b@q2_k_xl)    ↔  MCP tools on port 4111  (ctx: 200,000)
+ *   LLM2 (qwen3.5-9b@q2_k_xl:2)  ↔  MCP tools on port 4112  (ctx: 199,999)
  *
  * Every coordination event is committed to erl-ledger.json (hash-chained).
  *
@@ -26,7 +26,7 @@
  *   ALL  /*                    — transparent passthrough to LM Studio
  *
  * Start: node coord-proxy.js
- * Or:    $env:COORD_PORT=1233; node coord-proxy.js
+ * Or:    $env:COORD_PORT=1618; node coord-proxy.js
  */
 
 import http    from 'http';
@@ -37,7 +37,7 @@ import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-const PROXY_PORT  = parseInt(process.env.COORD_PORT  || '1233');
+const PROXY_PORT  = parseInt(process.env.COORD_PORT  || '1618');
 const LLM_HOST    = process.env.LLM_HOST || '127.0.0.1';
 const LLM_PORT    = parseInt(process.env.LLM_PORT    || '1234');
 const LLM1        = process.env.LLM1 || 'qwen3.5-9b@q2_k_xl';
@@ -69,8 +69,8 @@ function selectMode(phi) {
 function selectSoloLlm(phi, hdglActive) {
   // Within SOLO: phi below the reciprocal → LLM1, above → LLM2.
   // HDGL active_server can bias the decision (health-aware pairing).
-  if (hdglActive === 'local-mcp-dos') return LLM2;
-  if (hdglActive === 'local-mcp')     return LLM1;
+  if (hdglActive === 'phi-mirror')   return LLM2;
+  if (hdglActive === 'phi-primary')  return LLM1;
   return phi < 0.309 ? LLM1 : LLM2;
 }
 
@@ -210,7 +210,7 @@ async function runChallenge(messages, tag) {
 
 function readHdglActive() {
   try { return fs.readFileSync(path.join(STATE_DIR, 'active_server'), 'utf8').trim(); }
-  catch { return 'local-mcp'; }
+  catch { return 'phi-primary'; }
 }
 
 function readHdglHealth() {
@@ -352,8 +352,8 @@ server.listen(PROXY_PORT, '127.0.0.1', () => {
   console.log('════════════════════════════════════════════════════');
   console.log(`  Proxy     →  http://127.0.0.1:${PROXY_PORT}`);
   console.log(`  LM Studio →  http://${LLM_HOST}:${LLM_PORT}`);
-  console.log(`  LLM1      →  ${LLM1}  (ctx 200,000 / MCP :3333)`);
-  console.log(`  LLM2      →  ${LLM2}  (ctx 199,999 / MCP :3334)`);
+  console.log(`  LLM1      →  ${LLM1}  (ctx 200,000 / MCP :4111)`);
+  console.log(`  LLM2      →  ${LLM2}  (ctx 199,999 / MCP :4112)`);
   console.log(`  Modes     →  SOLO 61.8% | RELAY 23.6% | CHALLENGE 14.6%`);
   console.log(`  Force     →  header x-hdgl-mode: relay|challenge  (uses both LLMs)`);
   console.log(`  Preset    →  inference1  (temp=1, top_k=20, rep=1, pres=0, min_p=0)`);

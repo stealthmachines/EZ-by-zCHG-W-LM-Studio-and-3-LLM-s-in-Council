@@ -10,8 +10,8 @@ The scripts were created for Linux but need Windows-compatible versions. Here's 
 set STATE_DIR=C:\wuwei-routing\state
 set LOG_DIR=C:\wuwei-routing\logs
 set PID_FILE=C:\wuwei-routing\daemon.pid
-set PORT_MCP=3333
-set PORT_MCP_DOS=3334
+set PORT_MCP=4111
+set PORT_MCP_DOS=4112
 set LLM_PORT=1234
 set CYCLE_INTERVAL=30
 
@@ -31,12 +31,12 @@ set STATE_DIR=C:\wuwei-routing\state
 set /p PORT=0
 
 if not exist "%STATE_DIR%\active_server" (
-    echo local-mcp > "%STATE_DIR%\active_server"
+    echo phi-primary > "%STATE_DIR%\active_server"
 )
 
 set /p ACTIVE_SERVER=< "%STATE_DIR%\active_server"
-set PORT=3333
-if "%ACTIVE_SERVER%"=="local-mcp-dos" set PORT=3334
+set PORT=4111
+if "%ACTIVE_SERVER%"=="phi-mirror" set PORT=4112
 
 echo ROUTING_COMPLETE:server=%ACTIVE_SERVER%,port=%PORT%
 echo %PORT%
