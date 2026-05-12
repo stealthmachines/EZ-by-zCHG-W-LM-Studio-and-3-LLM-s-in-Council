@@ -1,4 +1,4 @@
-WARNING!  This repo gives bot DIRECT ACCESS to your filesystem.  So while it's easy to deploy, it's not for beginners.  DEMO at your own risk, and if you like it PAY ME FOR MY WORK per the license agreement.
+WARNING!  This repo gives bot DIRECT ACCESS to your filesystem.  So while it's easy to deploy, it's not for beginners.  DEMO at your own risk, and if you like it PAY ME FOR MY WORK per the license agreement.  This bot runs best at this time on a fresh install of Windows that you do not care about, with zero access to sensitive files.  You can easily accomplish this by purchasing a 128GB NVME, installing Windows (As I understand this means you only need one copy of windows for both hard drives), then manually swapping back to your daily driver, if you should ever choose to go back after experiencing the awesomeness of two local + one cloud bot accelerating your workflow.  Or, you know, containers.
 
 # Easy by zCHG.org
 
