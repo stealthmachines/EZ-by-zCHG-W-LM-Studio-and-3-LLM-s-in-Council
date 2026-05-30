@@ -285,7 +285,7 @@ $env:VERBOSE_ROUTING = $true
 
 ## License
 
-Wu-Wei Architecture + HDGL Hybrid - MIT License
+Wu-Wei Architecture + HDGL Hybrid - zCHG License
 
 ## Credits
 
